@@ -1,0 +1,339 @@
+<html lang="en">
+
+<head>
+    <title>123</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .page {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .page.current {
+            display: block;
+        }
+
+        div.wrapper {
+            width: 80%;
+            margin: auto;
+        }
+
+        /* choose user id page css start */
+        #page_choose-user-id {
+            width: 100%;
+            min-height: 100vh;
+            background: #f4f4f4;
+        }
+
+        #page_choose-user-id div.user-id.wrapper {
+            border: 1px solid #585858;
+            padding: 16px;
+            min-height: 480px;
+            box-shadow: 1px 1px 12px #424242;
+            border-radius: 8px;
+        }
+
+        #page_choose-user-id .user-id.wrapper a.user-id {
+            color: #1677f4;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        /* choose user id page css end */
+
+        /* choose process id page css start */
+        #page_choose-process-id {
+            width: 100%;
+            min-height: 100vh;
+            background: #f4f4f4;
+        }
+
+        #page_choose-process-id div.process-id.wrapper {
+            display: flex;
+            justify-content: left;
+            flex-flow: row wrap;
+            align-content: flex-start;
+            border: 1px solid #585858;
+            padding: 16px;
+            min-height: 480px;
+            box-shadow: 1px 1px 12px #424242;
+            border-radius: 8px;
+        }
+
+        #page_choose-process-id .process-id.wrapper a.process-id {
+            color: #1677f4;
+            cursor: pointer;
+            font-size: 1.2rem;
+            margin: 8px 8px 8px 8px;
+            min-width: 360px;
+        }
+
+        /* choose process id page css end */
+
+    </style>
+    <script
+            src="https://code.jquery.com/jquery-3.4.1.min.js"
+            integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+            crossorigin="anonymous"></script>
+    <script
+            src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+            integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+            crossorigin="anonymous"></script>
+</head>
+<body>
+<!-- index page -->
+<div id="page_index" class="page current">
+    <h1>Hello World</h1>
+    <label for="log-file">log file</label>
+    <input id="log-file" name="log-file" type="file" multiple/>
+    <br/>
+    <label for="log-structure">log structure</label>
+    <input id="log-structure" name="log-structure" type="text" style="width: 1200px;font-size: 14px;"/>
+    <br/>
+    <button id="upload">go</button>
+</div>
+
+<!-- choose user id page -->
+<div id="page_choose-user-id" class="page choose">
+    <div class="wrapper">
+        <h1>Choose user id</h1>
+    </div>
+    <div class="user-id wrapper">
+
+    </div>
+</div>
+
+<!-- choose process page -->
+<div id="page_choose-process-id" class="page choose">
+    <div class="wrapper">
+        <h1>Choose process id</h1>
+    </div>
+    <div class="process-id wrapper">
+
+    </div>
+</div>
+
+<script>
+    Object.byString = function(o, s) {
+        s = s.replace(/\[(\w+)]/g, '.$1'); // convert indexes to properties
+        s = s.replace(/^\./, '');           // strip a leading dot
+        let a = s.split('.');
+        for (let i = 0, n = a.length; i < n; ++i) {
+            let k = a[i];
+            if (k in o) {
+                o = o[k];
+            } else {
+                return;
+            }
+        }
+        return o;
+    }
+</script>
+
+<script>
+    class Page {
+        init() {
+
+        }
+
+        destroy() {
+
+        }
+    }
+
+    (function () {
+        const pageClassMap = {};
+        window.viewController = {
+            registerPage: function (pageId, pageClass) {
+                pageClassMap[pageId] = pageClass;
+            },
+            goPage: function (pageId, initArg) {
+                const activePageInstanceMap = {};
+                const speed = 750;
+                const $currentPage = $('div.page.current');
+                if ($currentPage.length > 0) {
+                    $currentPage.hide("slide", {direction: "left"}, speed, function () {
+                        if (activePageInstanceMap[pageId] && activePageInstanceMap[pageId]['destroy']) {
+                            activePageInstanceMap[pageId]['destroy']();
+                        }
+                    });
+                    $(`#${pageId}`).show("slide", {direction: "right"}, speed, function () {
+                        const pageClass = pageClassMap[pageId];
+                        if (pageClass) {
+                            const pageInstance = new pageClass(initArg);
+                            const initMethod = pageInstance['init'];
+                            if (initMethod) {
+                                initMethod();
+                            }
+                            activePageInstanceMap[pageId] = pageInstance;
+                        }
+                    }).addClass('current');
+                } else {
+                    $(`#${pageId}`).fadeIn().addClass('current');
+                }
+            }
+        }
+    })();
+</script>
+<script>
+    function uploadLog() {
+        const formData = new FormData();
+        formData.append('logStructure', document.getElementById('log-structure').value);
+        for (let logFile of document.getElementById('log-file').files) {
+            formData.append('logFiles', logFile);
+        }
+        $.ajax({
+            url: '/log/init',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+        }).done(d => {
+            console.log(d);
+            getCategoryByProcessIdLogDetail();
+        });
+    }
+
+    $('#upload').on('click', uploadLog);
+
+    async function getCategoryByProcessIdLogDetail() {
+        const processDetail = await new Promise(res => {
+            $.ajax({
+                url: '/log/category/processId',
+                method: 'POST',
+                success: d => res(d)
+            })
+        });
+
+        const userProcessMap = processDetail.reduce(
+            (map, processDetail) => pushInMapAutoInitValArray(map, [processDetail['userId']], processDetail), {});
+
+        viewController.goPage('page_choose-user-id', userProcessMap);
+        console.log(userProcessMap);
+    }
+
+    function pushInMapAutoInitValArray(map, key, val) {
+        map[key] = map[key] || [];
+        map[key].push(val);
+        return map;
+    }
+
+</script>
+<script>
+    (function () {
+        class ChooseUserIdPage extends Page {
+            userProcessMap = {};
+
+            constructor(userProcessMap) {
+                super();
+                this.userProcessMap = userProcessMap;
+            }
+
+
+            init = () => {
+                $('.user-id.wrapper').html(
+                    Object.keys(this.userProcessMap).map(k => `<a data-id="${k}" class="user-id">${k}</a>`).join('')
+                );
+
+                $(document).on('click', '#page_choose-user-id .user-id.wrapper a.user-id', this.onChooseIdAnchorClick);
+            }
+
+            onChooseIdAnchorClick = (e) => {
+                const userId = e.currentTarget.dataset.id;
+                window.viewController.goPage('page_choose-process-id', this.userProcessMap[userId])
+            }
+
+            destroy = () => {
+                $('.user-id.wrapper').html('');
+                $(document).off('click', '#page_choose-user-id .user-id.wrapper a.user-id', this.onChooseIdAnchorClick);
+            }
+        }
+
+        window.viewController.registerPage('page_choose-user-id', ChooseUserIdPage);
+    })();
+</script>
+
+<script>
+    (function () {
+        class ChooseProcessIdPage extends Page {
+            processList = [];
+
+            constructor(processList) {
+                super();
+                this.processList = processList;
+            }
+
+
+            init = () => {
+                $('.process-id.wrapper').html(
+                    this.processList.map(process => {
+                        const time =  Object.byString(process, 'logDetail[0].attributeMap.time') || 'none';
+                        const processId = process['processId'];
+                        return `<a data-id="${processId}" class="process-id">${time} ${processId}</a>`
+                    }).join('')
+                );
+
+                $(document).on('click', '#page_choose-process-id .process-id.wrapper a.process-id', this.onChooseIdAnchorClick);
+            }
+
+            onChooseIdAnchorClick(e) {
+                const processId = e.currentTarget.dataset.id;
+                alert(processId);
+            }
+
+            destroy = () => {
+                $('.user-id.wrapper').html('');
+                $(document).off('click', '#page_choose-process-id .process-id.wrapper a.process-id', this.onChooseIdAnchorClick);
+            }
+        }
+
+        window.viewController.registerPage('page_choose-process-id', ChooseProcessIdPage);
+    })();
+</script>
+
+
+<script>
+    (function () {
+        class ProcessDetailPage extends Page {
+            processList = [];
+
+            constructor(processList) {
+                super();
+                this.processList = processList;
+            }
+
+
+            init = () => {
+                $('.process-id.wrapper').html(
+                    this.processList.map(process => {
+                        const time =  Object.byString(process, 'logDetail[0].attributeMap.time') || 'none';
+                        const processId = process['processId'];
+                        return `<a data-id="${processId}" class="process-id">${time} ${processId}</a>`
+                    }).join('')
+                );
+
+                $(document).on('click', '#page_choose-process-id .process-id.wrapper a.process-id', this.onChooseIdAnchorClick);
+            }
+
+            onChooseIdAnchorClick(e) {
+                const processId = e.currentTarget.dataset.id;
+                alert(processId);
+            }
+
+            destroy = () => {
+                $('.user-id.wrapper').html('');
+                $(document).off('click', '#page_choose-process-id .process-id.wrapper a.process-id', this.onChooseIdAnchorClick);
+            }
+        }
+
+        window.viewController.registerPage('page_choose-process-id', ChooseProcessIdPage);
+    })();
+</script>
+</body>
+</html>

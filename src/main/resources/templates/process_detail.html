@@ -1,0 +1,184 @@
+<html lang="en">
+<style>
+    .connection {
+        border: 3.5px dotted blue;
+        opacity: 0.8;
+    }
+
+    .connection:hover {
+        opacity: 0.4;
+    }
+</style>
+<style>
+    #page_process-detail div.header.title {
+        width: 80%;
+        margin: auto;
+    }
+
+    #page_process-detail .header h1.title {
+        text-align: center;
+    }
+
+    .process-detail.wrapper {
+        width: 80%;
+        height: 500px;
+        margin: auto;
+        border: 2px solid;
+        padding: 1rem;
+    }
+
+    .detail-line {
+        display: flex;
+        align-content: baseline;
+        justify-content: center;
+        margin-top: 1rem;
+    }
+
+    .detail-line .time {
+        margin-right: 2.5rem;
+    }
+
+    .detail-line .time, .detail-line .process-detail-block {
+        display: inline-block;
+    }
+
+    #page_process-detail .process-detail-block,
+    #page_process-detail .process-detail-content {
+        position: relative;
+        width: 60%;
+        border: 1px solid red;
+    }
+
+    #page_process-detail .process-detail-block .order {
+        position: absolute;
+        width: 1rem;
+        height: 1rem;
+        left: -1.8rem;
+        top: 50%;
+        transform: translateY(-50%);
+        border: 2px solid purple;
+        border-radius: 99px;
+        background-color: rgb(79, 223, 201);
+        z-index: 99;
+    }
+
+    #page_process-detail .detail-line.content {
+        margin-top: 0;
+        display: none;
+    }
+
+    #page_process-detail .process-detail-block .content-btn {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        padding: 2px;
+        border: 1px solid gray;
+        border-radius: 2px;
+        background-color: #d2d2d2;
+    }
+
+    #page_process-detail .process-detail-block .content-btn:hover {
+        opacity: .7;
+    }
+
+    .process-detail-content {
+        height: 200px;
+        border: 1px solid green !important;
+    }
+</style>
+<script
+        src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+        crossorigin="anonymous"></script>
+<script
+        src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+        integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+        crossorigin="anonymous"></script>
+<script src="../static/jquery.connections.js"></script>
+<body>
+<div id="page_process-detail">
+    <div class="header">
+        <h1 class="title">Process detail</h1>
+    </div>
+    <div class="process-detail wrapper">
+        <div class="detail-line">
+            <div class="time">
+                <p>2020-04-10 12:01:55:125</p>
+            </div>
+            <div class="process-detail-block">
+                <div class="order"></div>
+                <div class="title">
+                    <p>/customercheckhandler/check</p>
+                </div>
+                <div data-idx="0" class="content-btn">
+                    details...
+                </div>
+            </div>
+        </div>
+        <div id="detail-line-content-0" class="detail-line content">
+            <div class="time" style="opacity: 0">
+                <p>2020-04-10 12:01:55:125</p>
+            </div>
+            <div class="process-detail-content">
+                <p>woeijqqowesj</p>
+            </div>
+        </div>
+        <div class="detail-line">
+            <div class="time">
+                <p>2020-04-10 12:01:55:125</p>
+            </div>
+            <div class="process-detail-block">
+                <div class="order"></div>
+                <div class="title">
+                    <p>woeijqqowesj</p>
+                </div>
+            </div>
+        </div>
+        <div class="detail-line">
+            <div class="time">
+                <p>2020-04-10 12:01:55:125</p>
+            </div>
+            <div class="process-detail-block">
+                <div class="order"></div>
+                <p>woeijqqowesj</p>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    let processOrderCount = 0;
+    const $orders = $('.process-detail-block .order');
+
+    function connectOrder() {
+        $orders.connections('remove');
+
+        for (let i = 0; i < $orders.length; i++) {
+            const $next = $orders.eq(i + 1);
+            if ($next.length > 0) {
+                const $order = $orders.eq(i);
+                $order[0].id = $order[0].id || 'processOrderCount' + ++processOrderCount
+                $next[0].id = $next[0].id || 'processOrderCount' + ++processOrderCount
+
+                $(`#${$order[0].id}, #${$next[0].id}`).connections();
+            }
+        }
+    }
+
+    connectOrder();
+    $(document).on('click', '.process-detail-block .content-btn', function () {
+        $orders.connections('remove');
+        const index = this.dataset.idx;
+        $(`#detail-line-content-${index}`).slideToggle({
+            start: function () {
+                $(this).css({
+                    display: "flex"
+                })
+            },
+            done: connectOrder
+        });
+
+    });
+</script>
+</body>
+</html>
